@@ -1,0 +1,18 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@model WebApplication1.Models.CreateRoleRequest
+@{
+    ViewData["Title"] = "Create Role";
+}
+<form asp-action="Create" method="post">
+    <div class="form-group">
+        <label asp-for="RoleName" class="control-label">Role Name</label>
+        <input asp-for="RoleName" class="form-control" />
+        <span asp-validation-for="RoleName" class="text-danger"></span>
+    </div>
+    <div class="form-group mt-3">
+        <input type="submit" value="Create" class="btn btn-primary" />
+        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+    </div>
+</form>
