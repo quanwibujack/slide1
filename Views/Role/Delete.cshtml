@@ -1,7 +1,7 @@
-﻿@model WebApplication1.Models.Region
+﻿@model WebApplication1.Models.Role
 
 @{
-    ViewData["Title"] = "Delete Region";
+    ViewData["Title"] = "Delete Role";
 }
 
 <div class="container py-5">
@@ -9,22 +9,22 @@
         <div class="col-md-5">
             <div class="card shadow-lg border-0 rounded-4">
                 <div class="card-header bg-danger text-white py-3 text-center">
-                    <h4 class="m-0 fw-bold"><i class="fas fa-exclamation-triangle"></i> Xác Nhận Xóa</h4>
+                    <h4 class="m-0 fw-bold"><i class="fas fa-exclamation-triangle"></i> Xác Nhận Xóa Role</h4>
                 </div>
                 <div class="card-body p-4 text-center">
-                    <i class="fas fa-trash-alt fa-4x text-danger mb-3 opacity-50"></i>
-                    <h5 class="mb-3">Bạn có chắc chắn muốn xóa khu vực này?</h5>
+                    <i class="fas fa-user-times fa-4x text-danger mb-3 opacity-50"></i>
+                    <h5 class="mb-3">Bạn có chắc chắn muốn xóa Role này?</h5>
 
                     <div class="alert alert-warning d-inline-block px-5">
                         <strong class="h4">@Model.Name</strong>
-                        <div class="small text-muted mt-1">ID: @Model.regionId</div>
+                        <div class="small text-muted mt-1">ID: @Model.roleId</div>
                     </div>
 
                     <p class="text-muted small">Hành động này không thể hoàn tác.</p>
 
-                    <form asp-action="DeleteConfirmed" asp-route-id="@Model.regionId" method="post" class="mt-4">
+                    <form asp-action="DeleteConfirmed" asp-route-id="@Model.roleId" method="post" class="mt-4">
 
-                        <input type="hidden" asp-for="regionId" />
+                        <input type="hidden" asp-for="roleId" />
 
                         <div class="d-flex justify-content-center gap-3">
                             <a asp-action="Index" class="btn btn-secondary px-4 rounded-pill">Hủy Bỏ</a>
