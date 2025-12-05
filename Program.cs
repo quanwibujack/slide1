@@ -5,8 +5,8 @@ using WebApplication1.Services;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.OpenApi.Models;
-using Microsoft.IdentityModel.Tokens; // Đã thêm để dùng SymmetricSecurityKey
-using System.Text; // Đã thêm để dùng Encoding
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,8 +57,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// --- PHẦN SỬA LỖI JWT ---
-// Lấy key từ cấu hình, nếu không có (null) thì dùng key mặc định để tránh lỗi 500
+// --- PHẦN JWT (Đã có sẵn logic chống null) ---
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "Key_Mac_Dinh_Tam_Thoi_Dai_Hon_32_Ky_Tu_123456789";
 
 builder.Services.AddAuthentication(option =>
@@ -75,29 +74,30 @@ builder.Services.AddAuthentication(option =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        // Dùng biến jwtKey đã xử lý ở trên để không bị null
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
     };
 });
 
 var app = builder.Build();
 
-// --- PHẦN TỰ ĐỘNG TẠO DATABASE (QUAN TRỌNG) ---
-// Đoạn này sẽ chạy mỗi khi web khởi động để đảm bảo có bảng Users
+// --- PHẦN TỰ ĐỘNG TẠO DATABASE (ĐÃ SỬA) ---
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        // Lệnh này tự động tạo database và bảng nếu chưa có
-        context.Database.Migrate();
-        Console.WriteLine("--> Database Migration Success!");
+
+        // --- SỬA Ở ĐÂY: Dùng EnsureCreated thay vì Migrate ---
+        // Lệnh này ép hệ thống tạo bảng ngay lập tức bất chấp migration
+        context.Database.EnsureCreated();
+
+        Console.WriteLine("--> Database Created Successfully (EnsureCreated)!");
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "--> Lỗi xảy ra khi khởi tạo Database (Migrate).");
+        logger.LogError(ex, "--> Lỗi xảy ra khi khởi tạo Database.");
     }
 }
 // -----------------------------------------------
@@ -125,8 +125,6 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Lưu ý: MapStaticAssets chỉ chạy trên .NET 9. 
-// Nếu bạn dùng bản cũ hơn hãy đổi thành app.UseStaticFiles();
 app.MapStaticAssets();
 
 app.MapControllerRoute(
