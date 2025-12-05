@@ -7,24 +7,25 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.OpenApi.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.IO; // Thêm thư viện này để xử lý file
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add services
 builder.Services.AddControllersWithViews()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     });
 
-// Register Email Service
 builder.Services.AddScoped<IEmailService, EmailService>();
 
-// Configure Entity Framework Core with SQLite
+// --- THAY ĐỔI 1: GHI CỨNG DATABASE LÀ "app.db" ---
+// Bỏ qua Configuration, dùng luôn tên file cố định để tránh lỗi biến môi trường
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlite("Data Source=app.db"));
 
-// Add Swagger/OpenAPI
+// Config Swagger (Giữ nguyên)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -32,7 +33,7 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
-        Description = "Please enter a valid token",
+        Description = "Token",
         Name = "Authorization",
         Type = SecuritySchemeType.Http,
         BearerFormat = "JWT",
@@ -43,11 +44,7 @@ builder.Services.AddSwaggerGen(c =>
         {
             new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                },
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" },
                 Scheme = "oauth2",
                 Name = "Bearer",
                 In = ParameterLocation.Header,
@@ -57,9 +54,8 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// --- PHẦN JWT (Đã có sẵn logic chống null) ---
+// Config JWT (Giữ nguyên logic chống null)
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "Key_Mac_Dinh_Tam_Thoi_Dai_Hon_32_Ky_Tu_123456789";
-
 builder.Services.AddAuthentication(option =>
 {
     option.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -80,7 +76,7 @@ builder.Services.AddAuthentication(option =>
 
 var app = builder.Build();
 
-// --- PHẦN TỰ ĐỘNG TẠO DATABASE (ĐÃ SỬA) ---
+// --- THAY ĐỔI 2: ÉP TẠO DATABASE MỚI TINH (Nuclear Option) ---
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -88,29 +84,28 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
 
-        // --- QUAN TRỌNG: Dùng EnsureCreated thay vì Migrate ---
-        // Lệnh này ép hệ thống tạo bảng ngay lập tức nếu chưa có.
-        // Nó hoạt động tốt hơn Migrate() khi bạn triển khai lần đầu hoặc thiếu folder Migrations.
-        context.Database.EnsureCreated();
+        Console.WriteLine("--> Bat dau qua trinh tao DB...");
 
-        Console.WriteLine("--> Database Created Successfully (EnsureCreated)!");
+        // 1. Tạo file database mới
+        bool created = context.Database.EnsureCreated();
+
+        if (created) Console.WriteLine("--> DA TAO MOI DATABASE THANH CONG!");
+        else Console.WriteLine("--> Database da ton tai, khong can tao lai.");
     }
     catch (Exception ex)
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "--> Lỗi xảy ra khi khởi tạo Database.");
+        // In lỗi to rõ ràng ra màn hình Console
+        Console.WriteLine("--> LOI ROI: " + ex.Message);
     }
 }
 // -----------------------------------------------
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
-// Enable Swagger in development
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -122,12 +117,10 @@ else
 }
 
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
-
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
