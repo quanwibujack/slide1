@@ -88,8 +88,9 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
 
-        // --- SỬA Ở ĐÂY: Dùng EnsureCreated thay vì Migrate ---
-        // Lệnh này ép hệ thống tạo bảng ngay lập tức bất chấp migration
+        // --- QUAN TRỌNG: Dùng EnsureCreated thay vì Migrate ---
+        // Lệnh này ép hệ thống tạo bảng ngay lập tức nếu chưa có.
+        // Nó hoạt động tốt hơn Migrate() khi bạn triển khai lần đầu hoặc thiếu folder Migrations.
         context.Database.EnsureCreated();
 
         Console.WriteLine("--> Database Created Successfully (EnsureCreated)!");
